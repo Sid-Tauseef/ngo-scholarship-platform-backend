@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt    = require('jsonwebtoken');
 const User   = require('./auth.model');
-const Member = require('../members/member.model');  // <— pull in Member
+const Member = require('../members/member.model');
 const Student = require('../students/student.model');
 const logger = require('../../utils/logger');
 
@@ -36,19 +36,19 @@ async function login({ email, password }) {
     throw { status: 401, message: 'Invalid credentials' };
   }
 
-  // 5) Issue JWT
+  // 5) Issue JWT with 7 days expiration
   const payload = { id: account._id, role: account.role };
-  const token   = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '8h' });
+  const token   = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
 
   // 6) Return a unified response
   return { 
-    user: account.toJSON(),   // strips password automatically 
+    user: account.toJSON(),
     token 
   };
 }
 
 async function register({ name, email, password, role }) {
-  // Check if email already exists in User, Member, or Student collections
+  // Check if email already exists
   const existingUser = await User.findOne({ email });
   const existingMember = await Member.findOne({ email });
   const existingStudent = await Student.findOne({ email });
@@ -64,9 +64,8 @@ async function register({ name, email, password, role }) {
       name,
       email,
       password: hashed,
-      // You might want to include rollNumber or course in frontend too
-      course: 'N/A',         // Set a placeholder if not provided
-      rollNumber: `TMP${Date.now()}` // Or generate/require this properly
+      course: 'N/A',
+      rollNumber: `TMP${Date.now()}`
     });
     await student.save();
     return student;
@@ -83,6 +82,5 @@ async function register({ name, email, password, role }) {
   await user.save();
   return user;
 }
-
 
 module.exports = { register, login };

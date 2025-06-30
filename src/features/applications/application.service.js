@@ -1,6 +1,19 @@
 const Application = require('./application.model');
 
+
 async function createApplication(data) {
+  // Check if student has already applied for this scheme
+  const existing = await Application.findOne({
+    student: data.student,
+    scheme: data.scheme
+  });
+
+  if (existing) {
+    const error = new Error('Student has already applied for this scheme');
+    error.status = 400;
+    throw error;
+  }
+
   const application = new Application(data);
   return await application.save();
 }
